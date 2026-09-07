@@ -143,7 +143,8 @@ no data); `api.js` attaches the key.
 
 - One page. CSS grid: 7 columns (days), rows = 15-min slots (96/day). Time labels on the left.
 - Week navigation: prev/next buttons + "today" + a date picker. Default = current week.
-- Blocks are absolutely-positioned divs over the grid.
+- Blocks are divs placed with `grid-row`/`grid-column` on the 15-min grid (chosen over absolute
+  positioning in M3: the browser does the row math and M4 drag/resize maps coordinates to rows either way).
 - Interactions (Pointer Events, no libraries):
   - Click empty grid → open a small inline form (label, color) → creates a block (default 1h).
   - Drag block body → move (snap 15 min, can cross days).

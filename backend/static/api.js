@@ -6,6 +6,7 @@ let apiKey = localStorage.getItem("rozvrh_api_key") ?? "";
 async function request(path, options = {}) {
   if (apiKey === "") {
     apiKey = prompt("Enter the API key") ?? "";
+    localStorage.setItem("rozvrh_api_key", apiKey);
   }
   const headers = { "X-API-Key": apiKey, ...(options.headers ?? {}) };
   const response = await fetch(path, { ...options, headers });

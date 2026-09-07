@@ -75,11 +75,6 @@ body {
   border-top: 1px solid var(--border);
 }
 
-.grid-cell {
-  grid-row: span 4;
-  border-top: 1px solid var(--border);
-}
-
 .day-column {
   position: relative;
   border-left: 1px solid var(--border);

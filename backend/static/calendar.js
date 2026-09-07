@@ -57,6 +57,8 @@ function dayColumn(dayIndex) {
   return col;
 }
 
+// Blocks overlapping the week edge (e.g. Sun 23:00 -> Mon next week) are clamped
+// into the visible week rather than rendered off-grid.
 function blockDiv(block, weekStartIso) {
   const div = document.createElement("div");
   div.className = "block";
@@ -65,10 +67,11 @@ function blockDiv(block, weekStartIso) {
   const dayIndex = Math.round((Date.parse(block.start.slice(0, 10)) - Date.parse(weekStartIso)) / DAY_MS);
   const startMinutes = minutesSinceMidnight(block.start);
   const endMinutes = minutesSinceMidnight(block.end);
-  const startSlots = Math.floor(startMinutes / SLOT_MINUTES);
+  const startSlots = Math.max(0, Math.floor(startMinutes / SLOT_MINUTES));
   const endSlots = Math.min(SLOTS_PER_DAY, Math.ceil(endMinutes / SLOT_MINUTES));
+  const column = Math.min(6, Math.max(0, dayIndex)) + 2;
   const span = Math.max(1, endSlots - startSlots);
-  div.style.gridColumn = String(dayIndex + 2);
+  div.style.gridColumn = String(column);
   div.style.gridRow = `${startSlots + 2} / span ${span}`;
   div.textContent = block.label;
   return div;
