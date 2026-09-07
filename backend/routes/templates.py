@@ -8,7 +8,7 @@ from backend import db
 from backend.auth import require_api_key
 from backend.models import BlockOut, validate_color, validate_label
 from backend.routes.blocks import row_to_out
-from backend.routes.weeks import resolve_week_or_422
+from backend.routes.weeks import resolve_week_or_422, week_bounds, week_bounds_iso
 
 router = APIRouter(prefix="/api/templates", dependencies=[Depends(require_api_key)])
 
@@ -61,14 +61,28 @@ class TemplateIn(BaseModel):
     blocks: list[TemplateBlockIn]
 
 
+class TemplateBlockOut(TemplateBlockIn):
+    id: int
+
+
 class TemplateOut(BaseModel):
     id: int
     name: str
     blocks: list[TemplateBlockOut]
 
 
-class TemplateBlockOut(TemplateBlockIn):
-    id: int
+def insert_template_blocks(
+    conn: sqlite3.Connection, template_id: int, blocks: list[TemplateBlockIn]
+) -> None:
+    conn.executemany(
+        "INSERT INTO template_blocks"
+        " (template_id, day_of_week, start_time, end_time, label, color)"
+        " VALUES (?, ?, ?, ?, ?, ?)",
+        [
+            (template_id, b.day_of_week, b.start_time, b.end_time, b.label, b.color)
+            for b in blocks
+        ],
+    )
 
 
 def template_block_rows(conn: sqlite3.Connection, template_id: int) -> list[sqlite3.Row]:
@@ -116,15 +130,7 @@ def create_template(template: TemplateIn) -> TemplateOut:
         cur = conn.execute("INSERT INTO templates (name) VALUES (?)", (template.name,))
         template_id = cur.lastrowid
         assert template_id is not None
-        conn.executemany(
-            "INSERT INTO template_blocks"
-            " (template_id, day_of_week, start_time, end_time, label, color)"
-            " VALUES (?, ?, ?, ?, ?, ?)",
-            [
-                (template_id, b.day_of_week, b.start_time, b.end_time, b.label, b.color)
-                for b in template.blocks
-            ],
-        )
+        insert_template_blocks(conn, template_id, template.blocks)
         conn.commit()
         row = get_template(conn, template_id)
         assert row is not None, "inserted template vanished"
@@ -142,15 +148,7 @@ def replace_template(template_id: int, template: TemplateIn) -> TemplateOut:
             raise HTTPException(status_code=404, detail="template not found")
         conn.execute("UPDATE templates SET name = ? WHERE id = ?", (template.name, template_id))
         conn.execute("DELETE FROM template_blocks WHERE template_id = ?", (template_id,))
-        conn.executemany(
-            "INSERT INTO template_blocks"
-            " (template_id, day_of_week, start_time, end_time, label, color)"
-            " VALUES (?, ?, ?, ?, ?, ?)",
-            [
-                (template_id, b.day_of_week, b.start_time, b.end_time, b.label, b.color)
-                for b in template.blocks
-            ],
-        )
+        insert_template_blocks(conn, template_id, template.blocks)
         conn.commit()
         row = get_template(conn, template_id)
         assert row is not None, "template vanished during update"
@@ -174,16 +172,16 @@ def delete_template(template_id: int) -> None:
 
 @router.post("/{template_id}/apply/{iso_year}/{iso_week}", response_model=list[BlockOut])
 def apply_template(template_id: int, iso_year: int, iso_week: int) -> list[BlockOut]:
-    week_start, week_end = resolve_week_or_422(iso_year, iso_week)
+    resolve_week_or_422(iso_year, iso_week)
     conn = db.connect()
     try:
         template = get_template(conn, template_id)
         if template is None:
             raise HTTPException(status_code=404, detail="template not found")
+        week_start, _ = week_bounds(iso_year, iso_week)
         # overlap = any intersection with an existing block
-        existing = db.list_blocks_in_range(
-            conn, week_start.isoformat() + "T00:00", week_end.isoformat() + "T00:00"
-        )
+        start_iso, end_iso = week_bounds_iso(iso_year, iso_week)
+        existing = db.list_blocks_in_range(conn, start_iso, end_iso)
         created: list[BlockOut] = []
         for row in template_block_rows(conn, template_id):
             day = date.fromordinal(week_start.toordinal() + row["day_of_week"])

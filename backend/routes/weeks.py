@@ -23,6 +23,12 @@ def week_bounds(year: int, week: int) -> tuple[date, date]:
     return start, start + timedelta(days=7)
 
 
+def week_bounds_iso(year: int, week: int) -> tuple[str, str]:
+    """Week bounds as the ISO datetime strings the blocks table stores."""
+    start, end = week_bounds(year, week)
+    return start.isoformat() + "T00:00", end.isoformat() + "T00:00"
+
+
 def resolve_week_or_422(iso_year: int, iso_week: int) -> tuple[date, date]:
     """Validated week bounds; raises the shared 422s for bad week numbers."""
     if not 1 <= iso_week <= 53:
@@ -35,12 +41,11 @@ def resolve_week_or_422(iso_year: int, iso_week: int) -> tuple[date, date]:
 
 @router.get("/{iso_year}/{iso_week}", response_model=list[BlockOut])
 def get_week(iso_year: int, iso_week: int) -> list[BlockOut]:
-    week_start, week_end = resolve_week_or_422(iso_year, iso_week)
+    resolve_week_or_422(iso_year, iso_week)
     conn = db.connect()
     try:
-        rows = db.list_blocks_in_range(
-            conn, week_start.isoformat() + "T00:00", week_end.isoformat() + "T00:00"
-        )
+        start_iso, end_iso = week_bounds_iso(iso_year, iso_week)
+        rows = db.list_blocks_in_range(conn, start_iso, end_iso)
         return [row_to_out(row) for row in rows]
     finally:
         conn.close()
