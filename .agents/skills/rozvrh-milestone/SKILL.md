@@ -34,9 +34,17 @@ You are implementing a milestone from `TODO.md` in this repository.
 1. Implement the milestone's tasks in the order listed in `TODO.md`.
 2. Write tests as you go: every route needs a happy-path and an error-path pytest
    (including 401 without/wrong API key). Tests use FastAPI `TestClient`.
-3. Run the full suite: `python -m pytest` — fix failures before proceeding.
-4. Do not check off TODO items yourself unless the acceptance criteria are met.
-5. When done: summarize what you built, how you validated it, and what to review.
+3. Run the full suite: `python -m pytest` — fix failures before proceeding. The suite runs
+   with `filterwarnings = error`: any warning fails the run. Fix the cause in our code; only
+   add a narrowly scoped, commented ignore to `pytest.ini` if the warning is genuinely from
+   a third-party dependency.
+4. Run the type checker: `python -m mypy` — it must exit zero. All backend functions fully
+   annotated. If mypy flags an "impossible" state, fix with `assert` (crash loudly), never
+   `cast`/`ignore` to silence it.
+5. Run the linter: `pylint backend` — must rate 10.00/10. Fix causes; only touch `.pylintrc`
+   for genuine convention conflicts (with a comment). No inline `# pylint: disable` pragmas.
+6. Do not check off TODO items yourself unless the acceptance criteria are met.
+7. When done: summarize what you built, how you validated it, and what to review.
    Do NOT start the next milestone — a code review happens first (see the
    `rozvrh-review` skill).
 

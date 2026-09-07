@@ -2,3 +2,5 @@ fastapi==0.115.6
 uvicorn==0.34.0
 httpx==0.28.1  # required by fastapi.testclient
 pytest==8.3.4
+mypy==2.3.1  # type checker; run: python -m mypy
+pylint==4.0.8  # linter; run: pylint backend, must rate 10.00/10

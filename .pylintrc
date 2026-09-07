@@ -1,0 +1,23 @@
+[MAIN]
+# keep the bar where it matters: backend is the typed, reviewed code
+ignore-paths = ^tests/|^\.venv/
+
+[MESSAGES CONTROL]
+# C0114/0115/0116: module/class/function docstrings — code must be readable
+#   without comments per AGENTS.md; docstrings on every helper are noise here.
+# R0903: single-string-used (small pydantic models are fine)
+# W0621: redefined-outer-name (fixtures are standard pytest style)
+disable =
+    missing-module-docstring,
+    missing-class-docstring,
+    missing-function-docstring,
+    too-few-public-methods,
+
+[FORMAT]
+max-line-length = 100
+
+[BASIC]
+good-names = i, j, k, ex, conn, db, _
+
+[DESIGN]
+max-args = 8

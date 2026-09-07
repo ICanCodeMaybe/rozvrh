@@ -22,6 +22,8 @@ Read this file fully before writing any code.
 | Frontend  | **Vanilla JS (ES modules) + CSS grid**, no build step, no npm | Runs on old hardware; agents must not pull in React/Vue/etc. |
 | Auth      | **Mandatory API key** on all `/api` routes (env `ROZVRH_API_KEY`), constant-time compare | App is internet-facing; the key is the only auth |
 | Tests     | `pytest` for backend; API tested via FastAPI `TestClient` | |
+| Types     | **mypy** (strict-ish: `disallow_untyped_defs`, `warn_return_any`), config in `mypy.ini` | Catches type bugs like wrong return types before review |
+| Linter    | **pylint** (10.00/10 required), config in `.pylintrc` | Catches code smells, dead code, shadowing that mypy misses |
 
 Hard constraints:
 - **No frontend frameworks, no bundlers, no node_modules.** Static files served by FastAPI.
@@ -158,6 +160,18 @@ no data); `api.js` attaches the key.
 - **Small modules, one responsibility.** If a file exceeds ~250 lines, split it.
 - **No dead code, no commented-out code, no "just in case" abstractions.** If it isn't used, delete it.
 - **No try/except that swallows errors.** Let it crash; the user reads logs.
+- **Type checks must pass:** `python -m mypy` exits zero before a milestone is done. All backend
+  functions are fully annotated; `Any` leaking into returns is an error. If mypy flags an
+  "impossible" state (e.g. row missing after INSERT), fix it with `assert` so it crashes
+  loudly — never with `cast`/`ignore` to silence it.
+- **Pylint must be 10.00/10:** `pylint backend` before a milestone is done. Fix the cause;
+  only add a disable to `.pylintrc` if a check genuinely conflicts with project conventions,
+  with a comment explaining why. No inline `# pylint: disable` pragmas.
+- **Zero warnings policy:** `pytest.ini` sets `filterwarnings = error` with narrow, message-scoped
+  ignores ONLY for known third-party deprecations (with a comment explaining each). Any new
+  warning — ours or a dependency's — fails the test run. Fix the cause or, if it is genuinely
+  third-party, add a narrowly scoped ignore with a comment. Never add broad
+  `ignore::DeprecationWarning` lines.
 - Every backend route must have at least one pytest covering the happy path and one the error path.
 - Frontend: no inline styles in JS where CSS classes work; no `innerHTML` with user data
   (XSS — use `textContent` or createElement).
@@ -180,7 +194,9 @@ No migrations system — if the schema changes, write a tiny one-off migration n
 
 ## 8. Definition of done (per milestone)
 
-1. `pytest` passes.
+1. `pytest` passes with **zero warnings** (see the zero warnings policy in §6).
+1. `python -m mypy` passes with no errors.
+1. `pylint backend` rates 10.00/10.
 2. App starts with a single command and works in a browser.
 3. No TODO/FIXME left in the code from that milestone.
 4. README updated if user-facing behavior changed.

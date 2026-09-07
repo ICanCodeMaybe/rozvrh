@@ -45,7 +45,9 @@ def list_blocks_in_range(conn: sqlite3.Connection, start: str, end: str) -> list
 
 
 def get_block(conn: sqlite3.Connection, block_id: int) -> sqlite3.Row | None:
-    return conn.execute("SELECT * FROM blocks WHERE id = ?", (block_id,)).fetchone()
+    row = conn.execute("SELECT * FROM blocks WHERE id = ?", (block_id,)).fetchone()
+    assert row is None or isinstance(row, sqlite3.Row)
+    return row
 
 
 def insert_block(
@@ -56,7 +58,10 @@ def insert_block(
         (start, end, label, color),
     )
     conn.commit()
-    return get_block(conn, cur.lastrowid)
+    assert cur.lastrowid is not None
+    row = get_block(conn, cur.lastrowid)
+    assert row is not None, "inserted block vanished"
+    return row
 
 
 def update_block(

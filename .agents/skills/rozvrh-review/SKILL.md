@@ -37,6 +37,9 @@ Your job: verify it against the spec, find real problems, and be honest — do n
 
 **Verification (do these yourself, don't trust the summary)**
 - Run `python -m pytest` — must pass.
+- Run `python -m mypy` — must exit zero; flag any `cast`/`type: ignore` used to silence a
+  real type error instead of fixing it.
+- Run `pylint backend` — must rate 10.00/10; flag any inline `# pylint: disable` pragmas.
 - Start the app (`uvicorn backend.main:app --port 8000`) and hit one endpoint with curl
   (with and without the API key) if the milestone touched the backend.
 

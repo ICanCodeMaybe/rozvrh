@@ -1,6 +1,6 @@
 import re
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ValidationInfo, field_validator
 
 COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 LABEL_MAX_LEN = 200
@@ -32,7 +32,7 @@ class BlockIn(BaseModel):
 
     @field_validator("end")
     @classmethod
-    def end_after_start(cls, end: str, info) -> str:
+    def end_after_start(cls, end: str, info: ValidationInfo) -> str:
         start = info.data.get("start")
         if start is not None and end <= start:
             raise ValueError("end must be after start")
