@@ -19,6 +19,18 @@ def _validate_hhmm(value: str) -> str:
     return value
 
 
+def validate_label(value: str) -> str:
+    if len(value) > LABEL_MAX_LEN:
+        raise ValueError(f"label must be at most {LABEL_MAX_LEN} characters")
+    return value
+
+
+def validate_color(value: str) -> str:
+    if not COLOR_RE.match(value):
+        raise ValueError("color must match #RRGGBB")
+    return value
+
+
 class BlockIn(BaseModel):
     start: str
     end: str

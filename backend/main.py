@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 
 from backend import db
 from backend.auth import get_api_key
-from backend.routes import blocks
+from backend.routes import blocks, templates, weeks
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
@@ -13,6 +13,8 @@ STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 def create_app() -> FastAPI:
     application = FastAPI(title="rozvrh")
     application.include_router(blocks.router)
+    application.include_router(weeks.router)
+    application.include_router(templates.router)
     db.init_db()
     get_api_key()
     if os.path.isdir(STATIC_DIR):

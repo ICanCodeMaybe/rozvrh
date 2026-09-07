@@ -14,6 +14,23 @@ CREATE TABLE IF NOT EXISTS blocks (
 );
 """
 
+TEMPLATE_SCHEMA = """
+CREATE TABLE IF NOT EXISTS templates (
+    id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS template_blocks (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    template_id INTEGER NOT NULL REFERENCES templates(id) ON DELETE CASCADE,
+    day_of_week INTEGER NOT NULL,
+    start_time  TEXT NOT NULL,
+    end_time    TEXT NOT NULL,
+    label       TEXT NOT NULL DEFAULT '',
+    color       TEXT NOT NULL DEFAULT '#4a90d9'
+);
+"""
+
 
 def get_db_path() -> str:
     return os.environ.get("ROZVRH_DB", DEFAULT_DB_PATH)
@@ -31,6 +48,7 @@ def init_db() -> None:
     conn = connect()
     try:
         conn.executescript(SCHEMA)
+        conn.executescript(TEMPLATE_SCHEMA)
         conn.commit()
     finally:
         conn.close()
