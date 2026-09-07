@@ -1,0 +1,96 @@
+:root {
+  --slot-height: 14px;
+  --time-col-width: 56px;
+  --border: #d5d9de;
+  --accent: #4a90d9;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  color: #1d2229;
+}
+
+#toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+#week-title {
+  margin: 0 8px;
+  font-size: 1rem;
+  flex: 1;
+}
+
+#week-picker { margin-left: auto; }
+
+#calendar {
+  display: grid;
+  grid-template-columns: var(--time-col-width) repeat(7, 1fr);
+  overflow-y: auto;
+  max-height: calc(100vh - 57px);
+}
+
+.day-header {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  padding: 4px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+  z-index: 2;
+}
+
+.day-header.today { color: var(--accent); }
+
+.corner { border-bottom: 1px solid var(--border); }
+
+.time-label {
+  position: sticky;
+  left: 0;
+  background: #fff;
+  font-size: 0.7rem;
+  color: #6b7280;
+  text-align: right;
+  padding-right: 6px;
+  border-top: 1px solid var(--border);
+  height: calc(4 * var(--slot-height));
+  transform: translateY(-0.5em);
+}
+
+.grid-cell {
+  grid-row: span 4;
+  border-top: 1px solid var(--border);
+}
+
+.day-column {
+  position: relative;
+  grid-row: 2 / span 96;
+  border-left: 1px solid var(--border);
+}
+
+.day-column .hour-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid #eceef1;
+}
+
+.block {
+  position: absolute;
+  left: 2px;
+  right: 4px;
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-size: 0.75rem;
+  overflow: hidden;
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+}
