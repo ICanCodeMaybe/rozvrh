@@ -3,7 +3,7 @@
 
 let apiKey = localStorage.getItem("rozvrh_api_key") ?? "";
 
-async function request(path, options) {
+async function request(path, options = {}) {
   if (apiKey === "") {
     apiKey = prompt("Enter the API key") ?? "";
   }

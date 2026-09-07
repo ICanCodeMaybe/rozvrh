@@ -45,6 +45,7 @@ function dayColumn(dayIndex) {
   const col = document.createElement("div");
   col.className = "day-column";
   col.style.gridColumn = String(dayIndex + 2);
+  col.style.gridRow = `2 / span ${SLOTS_PER_DAY}`;
   for (let hour = 0; hour < 24; hour++) {
     const line = document.createElement("div");
     line.className = "hour-line";
@@ -64,9 +65,9 @@ function blockDiv(block, weekStartIso) {
   const endMinutes = minutesSinceMidnight(block.end);
   const startSlots = Math.floor(startMinutes / SLOT_MINUTES);
   const endSlots = Math.min(SLOTS_PER_DAY, Math.ceil(endMinutes / SLOT_MINUTES));
-  div.style.top = `${startSlots * SLOT_HEIGHT_PX}px`;
-  div.style.height = `${Math.max(1, endSlots - startSlots) * SLOT_HEIGHT_PX}px`;
+  const span = Math.max(1, endSlots - startSlots);
   div.style.gridColumn = String(dayIndex + 2);
+  div.style.gridRow = `${startSlots + 2} / span ${span}`;
   div.textContent = block.label;
   return div;
 }

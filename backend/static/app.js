@@ -8,7 +8,7 @@ const DAY_MS = 86_400_000;
 function mondayOf(date) {
   const monday = new Date(date);
   monday.setHours(0, 0, 0, 0);
-  monday.setDate(monday.getDate() + 1 - (monday.getDay() + 6) % 7);
+  monday.setDate(monday.getDate() - (monday.getDay() + 6) % 7);
   return monday;
 }
 

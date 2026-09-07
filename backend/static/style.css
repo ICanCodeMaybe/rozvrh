@@ -32,6 +32,7 @@ body {
 #calendar {
   display: grid;
   grid-template-columns: var(--time-col-width) repeat(7, 1fr);
+  grid-template-rows: auto repeat(96, var(--slot-height));
   overflow-y: auto;
   max-height: calc(100vh - 57px);
 }
@@ -39,6 +40,7 @@ body {
 .day-header {
   position: sticky;
   top: 0;
+  grid-row: 1;
   background: #fff;
   border-bottom: 1px solid var(--border);
   padding: 4px;
@@ -50,19 +52,24 @@ body {
 
 .day-header.today { color: var(--accent); }
 
-.corner { border-bottom: 1px solid var(--border); }
+.corner {
+  grid-column: 1;
+  grid-row: 1;
+  border-bottom: 1px solid var(--border);
+}
 
 .time-label {
   position: sticky;
   left: 0;
-  background: #fff;
+  grid-column: 1;
+  height: calc(4 * var(--slot-height));
+  margin-top: -0.5em;
   font-size: 0.7rem;
   color: #6b7280;
   text-align: right;
   padding-right: 6px;
+  background: #fff;
   border-top: 1px solid var(--border);
-  height: calc(4 * var(--slot-height));
-  transform: translateY(-0.5em);
 }
 
 .grid-cell {
@@ -72,7 +79,6 @@ body {
 
 .day-column {
   position: relative;
-  grid-row: 2 / span 96;
   border-left: 1px solid var(--border);
 }
 
@@ -84,13 +90,14 @@ body {
 }
 
 .block {
-  position: absolute;
-  left: 2px;
-  right: 4px;
   border-radius: 4px;
   padding: 2px 4px;
   font-size: 0.75rem;
   overflow: hidden;
   color: #fff;
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+  min-width: 0;
+  min-height: 0;
+  margin: 0 2px;
+  z-index: 1;
 }
