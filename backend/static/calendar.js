@@ -36,6 +36,8 @@ function timeLabels() {
     const label = document.createElement("div");
     label.className = "time-label";
     label.textContent = String(hour).padStart(2, "0");
+    // +2: row 1 is the header, each hour spans 4 slot rows
+    label.style.gridRow = `${hour * 4 + 2} / span 4`;
     frag.append(label);
   }
   return frag;
