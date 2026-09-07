@@ -1,4 +1,21 @@
 <!doctype html>
 <html lang="en">
-<title>rozvrh</title>
-<p>Frontend comes in milestone M3.</p>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>rozvrh</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header id="toolbar">
+    <button id="prev-week" type="button" aria-label="Previous week">&larr;</button>
+    <button id="today" type="button">Today</button>
+    <button id="next-week" type="button" aria-label="Next week">&rarr;</button>
+    <input id="week-picker" type="week" aria-label="Pick week">
+    <h1 id="week-title"></h1>
+  </header>
+  <main id="calendar"></main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
