@@ -1,7 +1,1 @@
-__pycache__/
-*.pyc
-.venv/
-.pytest_cache/
-rozvrh.db
-*.db-wal
-*.db-shm
+.playwright-mcp/

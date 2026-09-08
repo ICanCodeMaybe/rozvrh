@@ -1,6 +1,0 @@
-[   40487ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://127.0.0.1:8412/api/weeks/2026/37:0
-[   40500ms] Error: 500 Internal Server Error
-    at request (http://127.0.0.1:8412/api.js:23:11)
-    at async fetchWeek (http://127.0.0.1:8412/api.js:33:20)
-    at async refresh (http://127.0.0.1:8412/app.js:55:18)
-[   49577ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://127.0.0.1:8412/api/blocks:0
