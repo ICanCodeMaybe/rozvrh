@@ -93,10 +93,11 @@ function handleEmptyClick(event, calendar, weekStart, onMutate) {
     saveText: "Create",
     onTodo: ({ label, color }) => {
       closeEditor();
+      // default 1h duration; parked in the to-do column until scheduled
       onMutate({
         method: "POST",
         path: "/api/blocks",
-        body: { start: isoAt(dayDate, startMinutes), end: isoAt(dayDate, startMinutes), label, color, source: "todo" },
+        body: { start: isoAt(dayDate, startMinutes), end: isoAt(dayDate, endMinutes), label, color, source: "todo" },
       });
     },
     todoTitle: "Create as an unscheduled to-do",
@@ -237,21 +238,20 @@ function handleTodoPointerDown(event, card, calendar, weekStart, onMutate) {
 function scheduleTodo(blockId, dayCol, upEvent, weekStart, onMutate) {
   const cell = cellFromPoint(upEvent.clientX, upEvent.clientY, dayCol);
   if (!cell) return;
-  const startMinutes = slotMinutes(cell.slot);
-  const endMinutes = Math.min(startMinutes + 60, 24 * 60);
+  // start-only: the server moves the block, preserving its duration
   const dayDate = new Date(weekStart);
   dayDate.setDate(dayDate.getDate() + cell.day);
   onMutate({
     method: "PATCH",
     path: `/api/blocks/${blockId}`,
-    body: { start: isoAt(dayDate, startMinutes), end: isoAt(dayDate, endMinutes) },
+    body: { start: isoAt(dayDate, slotMinutes(cell.slot)) },
   });
 }
 
 function openTodoEditor(blockId, card, onMutate) {
   openEditor({
     anchor: card.getBoundingClientRect(),
-    label: card.textContent,
+    label: card.querySelector(".todo-label")?.textContent ?? "",
     color: blockColor(card),
     saveText: "Save",
     onSave: ({ label, color }) => {

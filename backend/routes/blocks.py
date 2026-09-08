@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -7,6 +8,14 @@ from backend.auth import require_api_key
 from backend.models import TODO_SOURCE, BlockIn, BlockOut, BlockPatch
 
 router = APIRouter(prefix="/api/blocks", dependencies=[Depends(require_api_key)])
+
+ISO_FORMAT = "%Y-%m-%dT%H:%M"
+
+
+def shifted_end(old_start: str, old_end: str, new_start: str) -> str:
+    """end for a moved block: new_start + original duration."""
+    duration = datetime.strptime(old_end, ISO_FORMAT) - datetime.strptime(old_start, ISO_FORMAT)
+    return (datetime.strptime(new_start, ISO_FORMAT) + duration).strftime(ISO_FORMAT)
 
 
 def row_to_out(row: sqlite3.Row) -> BlockOut:
@@ -37,11 +46,6 @@ def list_blocks(
 
 @router.post("", response_model=BlockOut, status_code=201)
 def create_block(block: BlockIn) -> BlockOut:
-    # Unscheduled parking-lot blocks are stored as a zero-length sentinel.
-    if block.source == TODO_SOURCE:
-        block = block.model_copy(update={"end": block.start})
-    elif block.end == block.start:
-        raise HTTPException(status_code=422, detail="end must be after start")
     conn = db.connect()
     try:
         row = db.insert_block(
@@ -67,19 +71,18 @@ def patch_block(block_id: int, patch: BlockPatch) -> BlockOut:
         row = db.get_block(conn, block_id)
         if row is None:
             raise HTTPException(status_code=404, detail="block not found")
-        # Scheduling a TODO block means clearing the sentinel: drop the source
-        # marker and let start/end move it onto the grid. Unscheduling (source
-        # -> todo) collapses the block back to the zero-length sentinel at its
-        # current start.
-        if fields.get("source") == TODO_SOURCE and "start" not in fields and "end" not in fields:
-            fields["end"] = row["start"]
+        if "start" in fields and "end" not in fields:
+            # start-only patch = move, keeping the block's duration
+            fields["end"] = shifted_end(row["start"], row["end"], fields["start"])
+        # A to-do keeps its last slot and duration; only the source marker
+        # separates it from a scheduled block, so parking/unparking is
+        # lossless. Scheduling (start/end change) flips source back to ui.
         if "start" in fields or "end" in fields:
             if row["source"] == TODO_SOURCE:
-                fields.setdefault("source", "ui")
-                fields["end"] = fields.get("end", fields["start"])
+                fields["source"] = "ui"
             start = fields.get("start", row["start"])
             end = fields.get("end", row["end"])
-            if end <= start and fields.get("source") != TODO_SOURCE:
+            if end <= start:
                 raise HTTPException(status_code=422, detail="end must be after start")
         row = db.update_block(conn, block_id, fields)
         assert row is not None, "block vanished during update"

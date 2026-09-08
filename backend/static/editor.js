@@ -32,13 +32,18 @@ function swatchRow(selected, onPick) {
   return row;
 }
 
+let openForm = null;
+let onOutside = null;
+
 export function closeEditor() {
-  document.querySelector(".editor")?.remove();
+  if (onOutside) document.removeEventListener("pointerdown", onOutside);
+  onOutside = null;
+  openForm?.remove();
+  openForm = null;
 }
 
 // anchor: DOMRect or {left, top} to place the editor next to.
-// onAction({label, color}, action) is called with action "save" (submit),
-// "todo" (To-do button) or undefined for plain buttons like delete.
+// onSave({label, color}) fires on submit; optional onDelete / onTodo({label, color}).
 export function openEditor({ anchor, label = "", color = PALETTE[0], saveText, onSave, onDelete, onTodo, todoTitle }) {
   closeEditor();
   const form = document.createElement("form");
@@ -81,6 +86,7 @@ export function openEditor({ anchor, label = "", color = PALETTE[0], saveText, o
     onSave({ label: input.value, color: picked });
   });
   document.body.append(form);
+  openForm = form;
   const left = Math.min(Math.max(anchor.left, 8), window.innerWidth - form.offsetWidth - 8);
   const top = Math.min(Math.max(anchor.top, 8), window.innerHeight - form.offsetHeight - 8);
   form.style.left = `${left}px`;
@@ -89,15 +95,13 @@ export function openEditor({ anchor, label = "", color = PALETTE[0], saveText, o
   form.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeEditor();
   });
-  // Close when clicking outside; skip the click that opened the editor and
-  // let buttons inside run their own handlers.
-  setTimeout(() => {
-    const onOutside = (event) => {
-      if (!form.contains(event.target)) {
-        document.removeEventListener("pointerdown", onOutside);
-        closeEditor();
-      }
-    };
-    document.addEventListener("pointerdown", onOutside);
-  });
+  // Close on the next pointerdown outside. Tracked module-side so closeEditor
+  // removes the listener no matter how the editor is dismissed; a stale
+  // closer can never kill a later editor (that made every second grid click
+  // appear dead).
+  onOutside = (event) => {
+    if (event.target instanceof Node && !form.contains(event.target)) closeEditor();
+  };
+  // next tick: skip the pointerdown that opened the editor
+  setTimeout(() => document.addEventListener("pointerdown", onOutside));
 }

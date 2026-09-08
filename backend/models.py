@@ -48,9 +48,7 @@ class BlockIn(BaseModel):
     @classmethod
     def end_after_start(cls, end: str, info: ValidationInfo) -> str:
         start = info.data.get("start")
-        # end == start is the zero-length sentinel for TODO blocks; the routes
-        # reject it for scheduled (source=ui) blocks.
-        if start is not None and end < start:
+        if start is not None and end <= start:
             raise ValueError("end must be after start")
         return end
 

@@ -90,7 +90,13 @@ function todoCard(block) {
   card.className = "todo-card";
   card.dataset.blockId = String(block.id);
   card.style.backgroundColor = block.color;
-  card.textContent = block.label;
+  const labelSpan = document.createElement("span");
+  labelSpan.className = "todo-label";
+  labelSpan.textContent = block.label;
+  const durationSpan = document.createElement("span");
+  durationSpan.className = "block-duration";
+  durationSpan.textContent = formatDuration(durationMinutes(block));
+  card.append(labelSpan, durationSpan);
   return card;
 }
 

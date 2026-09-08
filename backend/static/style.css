@@ -125,6 +125,8 @@ body {
   overflow-wrap: anywhere;
 }
 
+.todo-label { display: block; }
+
 .todo-card.dragging {
   opacity: 0.75;
 }
