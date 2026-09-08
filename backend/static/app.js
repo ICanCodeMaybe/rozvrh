@@ -3,8 +3,8 @@ import { render } from "./calendar.js";
 import { wireInteractions } from "./interact.js";
 
 // state = { weekStart: Date (Monday 00:00 local), blocks: [...], todo: [...] }
-// — re-render after every change. todo blocks are unscheduled (start = end
-// sentinel on the server); they are week-independent so fetched once per render.
+// — re-render after every change. todo blocks are unscheduled (source='todo')
+// but keep a real slot+duration; they are week-independent so fetched once per render.
 
 const DAY_MS = 86_400_000;
 

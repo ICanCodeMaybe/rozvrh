@@ -56,8 +56,8 @@ def init_db() -> None:
 
 def list_blocks_in_range(conn: sqlite3.Connection, start: str, end: str) -> list[sqlite3.Row]:
     # overlap = block.start < range_end AND block.end > range_start.
-    # Unscheduled parking-lot blocks (source='todo', start = end) never overlap
-    # and are excluded explicitly so a zero-length block inside the range can't match.
+    # To-do blocks keep a real slot+duration but are unscheduled, so they are
+    # excluded by source rather than by the overlap predicate.
     return conn.execute(
         "SELECT * FROM blocks WHERE start < ? AND end > ? AND source != 'todo' ORDER BY start, id",
         (end, start),

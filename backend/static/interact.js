@@ -164,8 +164,8 @@ function droppedOnTodo(upEvent) {
 }
 
 function unscheduleBlock(blockId, onMutate) {
-  // Returning to the TODO column restores the zero-length sentinel; the
-  // server anchors the block at its current start.
+  // Parking keeps the block's slot and duration; only the source marker
+  // changes, so scheduling it again later is lossless.
   onMutate({
     method: "PATCH",
     path: `/api/blocks/${blockId}`,
@@ -200,7 +200,7 @@ function commitBlock(block, weekStart, onMutate, blockId) {
 function openBlockEditor(blockId, block, onMutate) {
   openEditor({
     anchor: block.getBoundingClientRect(),
-    label: block.textContent,
+    label: block.querySelector(".block-label")?.textContent ?? "",
     color: blockColor(block),
     saveText: "Save",
     onSave: ({ label, color }) => {
