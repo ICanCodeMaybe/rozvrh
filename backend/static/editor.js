@@ -36,8 +36,10 @@ export function closeEditor() {
   document.querySelector(".editor")?.remove();
 }
 
-// anchor: DOMRect to place the editor next to; onSave({label, color}), optional onDelete.
-export function openEditor({ anchor, label = "", color = PALETTE[0], saveText, onSave, onDelete }) {
+// anchor: DOMRect or {left, top} to place the editor next to.
+// onAction({label, color}, action) is called with action "save" (submit),
+// "todo" (To-do button) or undefined for plain buttons like delete.
+export function openEditor({ anchor, label = "", color = PALETTE[0], saveText, onSave, onDelete, onTodo, todoTitle }) {
   closeEditor();
   const form = document.createElement("form");
   form.className = "editor";
@@ -65,6 +67,14 @@ export function openEditor({ anchor, label = "", color = PALETTE[0], saveText, o
     del.addEventListener("click", onDelete);
     actions.append(del);
   }
+  if (onTodo) {
+    const todo = document.createElement("button");
+    todo.type = "button";
+    todo.textContent = "To-do";
+    todo.title = todoTitle ?? "Move to the to-do column (unschedule)";
+    todo.addEventListener("click", () => onTodo({ label: input.value, color: picked }));
+    actions.append(todo);
+  }
   form.append(input, swatchRow(picked, (c) => (picked = c)), actions);
   form.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -79,11 +89,15 @@ export function openEditor({ anchor, label = "", color = PALETTE[0], saveText, o
   form.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeEditor();
   });
-  // Close when clicking anywhere outside the editor (next tick so the
-  // opening click does not immediately close it).
+  // Close when clicking outside; skip the click that opened the editor and
+  // let buttons inside run their own handlers.
   setTimeout(() => {
-    document.addEventListener("pointerdown", (event) => {
-      if (!form.contains(event.target)) closeEditor();
-    }, { once: true });
+    const onOutside = (event) => {
+      if (!form.contains(event.target)) {
+        document.removeEventListener("pointerdown", onOutside);
+        closeEditor();
+      }
+    };
+    document.addEventListener("pointerdown", onOutside);
   });
 }

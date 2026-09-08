@@ -1,8 +1,10 @@
-import { fetchWeek, mutate } from "./api.js";
+import { fetchTodo, fetchWeek, mutate } from "./api.js";
 import { render } from "./calendar.js";
 import { wireInteractions } from "./interact.js";
 
-// state = { weekStart: Date (Monday 00:00 local), blocks: [...] } — re-render after every change.
+// state = { weekStart: Date (Monday 00:00 local), blocks: [...], todo: [...] }
+// — re-render after every change. todo blocks are unscheduled (start = end
+// sentinel on the server); they are week-independent so fetched once per render.
 
 const DAY_MS = 86_400_000;
 
@@ -40,7 +42,7 @@ function weekTitle(monday) {
   return `${fmt(monday)} – ${fmt(sunday)}`;
 }
 
-const state = { weekStart: mondayOf(new Date()), blocks: [] };
+const state = { weekStart: mondayOf(new Date()), blocks: [], todo: [] };
 
 function mount(state) {
   const calendar = render(state);
@@ -52,7 +54,7 @@ function mount(state) {
 
 async function refresh() {
   const { year, week } = isoWeekOf(state.weekStart);
-  state.blocks = await fetchWeek(year, week);
+  [state.blocks, state.todo] = await Promise.all([fetchWeek(year, week), fetchTodo()]);
   mount(state);
 }
 

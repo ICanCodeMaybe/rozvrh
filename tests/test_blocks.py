@@ -110,3 +110,75 @@ def test_401_with_wrong_key(client):
 def test_401_on_post_without_key(client):
     resp = client.post("/api/blocks", json=VALID)
     assert resp.status_code == 401
+
+
+# --- TODO blocks (source="todo", zero-length sentinel) ---
+
+
+def test_create_todo_block(client):
+    resp = client.post("/api/blocks", json={"start": "2026-09-07T08:00", "end": "2026-09-07T08:00", "label": "Someday", "source": "todo"}, headers=headers())
+    assert resp.status_code == 201
+    block = resp.json()
+    assert block["source"] == "todo"
+    assert block["end"] == block["start"]
+
+
+def test_create_todo_block_ignores_mismatched_end(client):
+    # the server, not the client, decides the sentinel: end collapses to start
+    resp = client.post("/api/blocks", json={"start": "2026-09-07T08:00", "end": "2026-09-07T09:00", "label": "Someday", "source": "todo"}, headers=headers())
+    assert resp.status_code == 201
+    assert resp.json()["end"] == "2026-09-07T08:00"
+
+
+def test_todo_blocks_excluded_from_range_and_week(client):
+    client.post("/api/blocks", json={"start": "2026-09-07T10:00", "end": "2026-09-07T10:00", "label": "T", "source": "todo"}, headers=headers())
+    resp = client.get("/api/blocks", params={"from": "2026-09-07T00:00", "to": "2026-09-08T00:00"}, headers=headers())
+    assert resp.json() == []
+    resp = client.get("/api/weeks/2026/37", headers=headers())
+    assert resp.json() == []
+
+
+def test_todo_list_returns_todo_blocks_only(client):
+    client.post("/api/blocks", json=VALID, headers=headers())
+    todo = client.post("/api/blocks", json={"start": "2026-09-07T08:00", "end": "2026-09-07T08:00", "label": "Someday", "source": "todo"}, headers=headers()).json()
+    resp = client.get("/api/blocks/todo", headers=headers())
+    assert resp.status_code == 200
+    assert [b["id"] for b in resp.json()] == [todo["id"]]
+
+
+def test_schedule_todo_block_via_patch(client):
+    todo = client.post("/api/blocks", json={"start": "2026-09-07T08:00", "end": "2026-09-07T08:00", "label": "Someday", "source": "todo"}, headers=headers()).json()
+    resp = client.patch(f"/api/blocks/{todo['id']}", json={"start": "2026-09-08T14:00", "end": "2026-09-08T15:00"}, headers=headers())
+    assert resp.status_code == 200
+    scheduled = resp.json()
+    assert scheduled["source"] == "ui"
+    resp = client.get("/api/weeks/2026/37", headers=headers())
+    assert [b["id"] for b in resp.json()] == [todo["id"]]
+
+
+def test_schedule_todo_block_start_only_defaults_one_hour(client):
+    todo = client.post("/api/blocks", json={"start": "2026-09-07T08:00", "end": "2026-09-07T08:00", "label": "Someday", "source": "todo"}, headers=headers()).json()
+    resp = client.patch(f"/api/blocks/{todo['id']}", json={"start": "2026-09-08T14:00"}, headers=headers())
+    assert resp.status_code == 422  # start alone makes end (=old start) <= start
+
+
+def test_unschedule_block_via_source_patch(client):
+    block = client.post("/api/blocks", json=VALID, headers=headers()).json()
+    resp = client.patch(f"/api/blocks/{block['id']}", json={"source": "todo"}, headers=headers())
+    assert resp.status_code == 200
+    unscheduled = resp.json()
+    assert unscheduled["source"] == "todo"
+    assert unscheduled["end"] == unscheduled["start"]
+    resp = client.get("/api/weeks/2026/37", headers=headers())
+    assert resp.json() == []
+    resp = client.get("/api/blocks/todo", headers=headers())
+    assert [b["id"] for b in resp.json()] == [block["id"]]
+
+
+def test_422_on_invalid_source(client):
+    resp = client.post("/api/blocks", json={**VALID, "source": "ics:fake"}, headers=headers())
+    assert resp.status_code == 422
+
+
+def test_401_on_todo_list_without_key(client):
+    assert client.get("/api/blocks/todo").status_code == 401

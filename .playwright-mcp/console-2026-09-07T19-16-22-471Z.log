@@ -1,0 +1,6 @@
+[    7859ms] TypeError: Cannot read properties of undefined (reading 'headers')
+    at request (http://localhost:8123/api.js:10:54)
+    at fetchWeek (http://localhost:8123/api.js:28:26)
+    at refresh (http://localhost:8123/app.js:52:24)
+    at http://localhost:8123/app.js:73:1
+[    7876ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:8123/favicon.ico:0

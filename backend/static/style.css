@@ -1,6 +1,8 @@
 :root {
   --slot-height: 14px;
   --time-col-width: 56px;
+  --todo-col-width: 180px;
+  --day-min-width: 90px;
   --border: #d5d9de;
   --accent: #4a90d9;
 }
@@ -31,8 +33,9 @@ body {
 
 #calendar {
   display: grid;
-  grid-template-columns: var(--time-col-width) repeat(7, 1fr);
+  grid-template-columns: var(--time-col-width) repeat(7, minmax(var(--day-min-width), 1fr));
   grid-template-rows: auto repeat(96, var(--slot-height));
+  overflow-x: auto;
   overflow-y: auto;
   max-height: calc(100vh - 57px);
 }
@@ -87,6 +90,69 @@ body {
   border-top: 1px solid #eceef1;
 }
 
+.todo-column {
+  position: relative;
+  grid-column: 9;
+  grid-row: 1 / span 97;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  background: #f7f8fa;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  width: var(--todo-col-width);
+  min-width: var(--todo-col-width);
+  max-height: 100%;
+}
+
+.todo-column .day-header {
+  position: static;
+  flex: 0 0 auto;
+}
+
+.todo-card {
+  flex: 0 0 auto;
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-size: 0.75rem;
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  overflow-wrap: anywhere;
+}
+
+.todo-card.dragging {
+  opacity: 0.75;
+}
+
+.block-label { display: block; }
+
+.block-duration {
+  display: block;
+  font-size: 0.65rem;
+  opacity: 0.85;
+}
+
+@media (max-width: 700px) {
+  :root {
+    --day-min-width: 64px;
+    --time-col-width: 40px;
+    --todo-col-width: 150px;
+  }
+
+  .day-header { font-size: 0.72rem; padding: 3px 1px; }
+  .block { font-size: 0.65rem; padding: 1px 2px; }
+  .block-duration { font-size: 0.58rem; }
+  .todo-card { font-size: 0.7rem; }
+
+  /* fixed-size editor needs the whole screen on phones */
+  .editor { width: min(220px, calc(100vw - 16px)); }
+}
+
 .block {
   border-radius: 4px;
   padding: 2px 4px;
@@ -124,6 +190,9 @@ body {
   padding: 8px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
   width: 190px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
 }
 
 .editor-label {
@@ -137,6 +206,10 @@ body {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   gap: 4px;
+}
+
+@media (max-width: 380px) {
+  .editor-palette { grid-template-columns: repeat(8, minmax(16px, 1fr)); }
 }
 
 .swatch {

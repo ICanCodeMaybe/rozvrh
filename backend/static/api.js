@@ -34,6 +34,11 @@ export async function fetchWeek(isoYear, isoWeek) {
   return response.json();
 }
 
+export async function fetchTodo() {
+  const response = await request("/api/blocks/todo");
+  return response.json();
+}
+
 export async function mutate({ method, path, body }) {
   const response = await request(path, {
     method,

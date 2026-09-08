@@ -55,10 +55,18 @@ def init_db() -> None:
 
 
 def list_blocks_in_range(conn: sqlite3.Connection, start: str, end: str) -> list[sqlite3.Row]:
-    # overlap = block.start < range_end AND block.end > range_start
+    # overlap = block.start < range_end AND block.end > range_start.
+    # Unscheduled parking-lot blocks (source='todo', start = end) never overlap
+    # and are excluded explicitly so a zero-length block inside the range can't match.
     return conn.execute(
-        "SELECT * FROM blocks WHERE start < ? AND end > ? ORDER BY start, id",
+        "SELECT * FROM blocks WHERE start < ? AND end > ? AND source != 'todo' ORDER BY start, id",
         (end, start),
+    ).fetchall()
+
+
+def list_todo_blocks(conn: sqlite3.Connection) -> list[sqlite3.Row]:
+    return conn.execute(
+        "SELECT * FROM blocks WHERE source = 'todo' ORDER BY id DESC"
     ).fetchall()
 
 
@@ -69,11 +77,17 @@ def get_block(conn: sqlite3.Connection, block_id: int) -> sqlite3.Row | None:
 
 
 def insert_block(
-    conn: sqlite3.Connection, start: str, end: str, label: str, color: str
+    conn: sqlite3.Connection,
+    *,
+    start: str,
+    end: str,
+    label: str,
+    color: str,
+    source: str = "ui",
 ) -> sqlite3.Row:
     cur = conn.execute(
-        "INSERT INTO blocks (start, end, label, color) VALUES (?, ?, ?, ?)",
-        (start, end, label, color),
+        "INSERT INTO blocks (start, end, label, color, source) VALUES (?, ?, ?, ?, ?)",
+        (start, end, label, color, source),
     )
     conn.commit()
     assert cur.lastrowid is not None

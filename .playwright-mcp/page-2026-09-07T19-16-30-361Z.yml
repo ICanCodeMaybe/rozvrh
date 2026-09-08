@@ -1,0 +1,8 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - button "Previous week" [ref=e3]: ←
+    - button "Today" [ref=e4]
+    - button "Next week" [ref=e5]: →
+    - textbox "Pick week" [ref=e6]
+    - heading [level=1]
+  - main

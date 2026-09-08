@@ -41,6 +41,18 @@ skips occupied slots. `pytest` passes.
 
 **Accept:** full CRUD works in the browser against the real API.
 
+## M4.5 — To-do column, duration display, mobile
+- [x] `GET /api/blocks/todo`: unscheduled blocks (`source="todo"`, zero-length sentinel `start = end`)
+- [x] To-do column in the UI: create-as-todo from the grid editor, tap card to edit/delete,
+      drag card onto the grid to schedule, drop block on the column (or "To-do" button) to unschedule
+- [x] To-do blocks excluded from week/range queries; scheduling a todo clears the sentinel
+- [x] Block duration shown in the UI (e.g. "2h 30m"), correct across midnight
+- [x] Mobile: grid scrolls horizontally with min day width, fixed-size to-do column,
+      editor clamped to the viewport, no body-level overflow on phones
+
+**Accept:** park a block in To-do, drag it onto a day later; all interactions usable
+on a phone-sized viewport. `pytest` passes.
+
 ## M5 — Templates UI
 - [ ] "Save current week as template" flow (name + blocks)
 - [ ] Template list, apply-to-current-week button (shows what was skipped)

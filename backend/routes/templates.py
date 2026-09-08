@@ -189,7 +189,9 @@ def apply_template(template_id: int, iso_year: int, iso_week: int) -> list[Block
             end = day.isoformat() + "T" + row["end_time"]
             if any(start < ex["end"] and end > ex["start"] for ex in existing):
                 continue
-            inserted = db.insert_block(conn, start, end, row["label"], row["color"])
+            inserted = db.insert_block(
+                conn, start=start, end=end, label=row["label"], color=row["color"]
+            )
             created.append(row_to_out(inserted))
             existing.append(inserted)
         return created

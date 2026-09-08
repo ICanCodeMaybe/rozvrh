@@ -1,5 +1,7 @@
 // Pointer-event interactions: create on empty grid, drag to move, drag
-// bottom edge to resize. All mutations go through callbacks into app.js.
+// bottom edge to resize, plus the to-do column (create as todo, drag a card
+// onto the grid to schedule, drop a block on the column to unschedule).
+// All mutations go through callbacks into app.js.
 
 import { openEditor, closeEditor } from "./editor.js";
 
@@ -34,12 +36,16 @@ function isoAt(date, minutes) {
 
 // Grid cell (day index, slot) under a pointer event, or null outside the grid.
 // Uses the day-column rect (not the calendar's) so scrolling is handled for free.
-function cellFromEvent(event, calendar) {
+function cellFromEvent(event) {
   const col = event.target.closest(".day-column");
   if (!col) return null;
+  return cellFromPoint(event.clientX, event.clientY, col);
+}
+
+function cellFromPoint(clientX, clientY, col) {
   const rect = col.getBoundingClientRect();
   const day = Number(col.style.gridColumn) - 2;
-  const slot = Math.floor((event.clientY - rect.top) / SLOT_HEIGHT_PX);
+  const slot = Math.floor((clientY - rect.top) / SLOT_HEIGHT_PX);
   if (day < 0 || day > 6 || slot < 0 || slot >= SLOTS_PER_DAY) return null;
   return { day, slot };
 }
@@ -50,7 +56,7 @@ function slotMinutes(slot) {
 
 function startDrag(event, calendar, onMove) {
   event.preventDefault();
-  const move = (e) => onMove(cellFromEvent(e, calendar));
+  const move = (e) => onMove(cellFromEvent(e));
   const up = () => {
     window.removeEventListener("pointermove", move);
     window.removeEventListener("pointerup", up);
@@ -62,8 +68,11 @@ function startDrag(event, calendar, onMove) {
 export function wireInteractions(calendar, { weekStart, onMutate }) {
   calendar.addEventListener("pointerdown", (event) => {
     const block = event.target.closest(".block");
+    const todoCard = event.target.closest(".todo-card");
     if (block) {
       handleBlockPointerDown(event, block, calendar, weekStart, onMutate);
+    } else if (todoCard) {
+      handleTodoPointerDown(event, todoCard, calendar, weekStart, onMutate);
     } else if (event.target.closest(".day-column")) {
       if (event.target.classList.contains("block")) return;
       handleEmptyClick(event, calendar, weekStart, onMutate);
@@ -72,7 +81,7 @@ export function wireInteractions(calendar, { weekStart, onMutate }) {
 }
 
 function handleEmptyClick(event, calendar, weekStart, onMutate) {
-  const cell = cellFromEvent(event, calendar);
+  const cell = cellFromEvent(event);
   if (!cell) return;
   const dayDate = new Date(weekStart);
   dayDate.setDate(dayDate.getDate() + cell.day);
@@ -82,6 +91,15 @@ function handleEmptyClick(event, calendar, weekStart, onMutate) {
   openEditor({
     anchor: { left: event.clientX, top: event.clientY },
     saveText: "Create",
+    onTodo: ({ label, color }) => {
+      closeEditor();
+      onMutate({
+        method: "POST",
+        path: "/api/blocks",
+        body: { start: isoAt(dayDate, startMinutes), end: isoAt(dayDate, startMinutes), label, color, source: "todo" },
+      });
+    },
+    todoTitle: "Create as an unscheduled to-do",
     onSave: ({ label, color }) => {
       closeEditor();
       onMutate({
@@ -123,8 +141,12 @@ function handleBlockPointerDown(event, block, calendar, weekStart, onMutate) {
       moveBlockVisual(block, startDay + dayDelta, startSlot + slotDelta, spanSlots);
     }
   });
-  window.addEventListener("pointerup", () => {
+  window.addEventListener("pointerup", (upEvent) => {
     block.classList.remove("dragging", "resizing");
+    if (!isResize && droppedOnTodo(upEvent)) {
+      unscheduleBlock(blockId, onMutate);
+      return;
+    }
     const moved = block.style.gridColumn !== String(startDay + 2) ||
       block.style.gridRow !== `${startSlot + 2} / span ${spanSlots}`;
     if (moved) {
@@ -133,6 +155,21 @@ function handleBlockPointerDown(event, block, calendar, weekStart, onMutate) {
       openBlockEditor(blockId, block, onMutate);
     }
   }, { once: true });
+}
+
+function droppedOnTodo(upEvent) {
+  const target = document.elementFromPoint(upEvent.clientX, upEvent.clientY);
+  return target?.closest(".todo-column") != null;
+}
+
+function unscheduleBlock(blockId, onMutate) {
+  // Returning to the TODO column restores the zero-length sentinel; the
+  // server anchors the block at its current start.
+  onMutate({
+    method: "PATCH",
+    path: `/api/blocks/${blockId}`,
+    body: { source: "todo" },
+  });
 }
 
 function moveBlockVisual(block, day, slot, span) {
@@ -164,6 +201,58 @@ function openBlockEditor(blockId, block, onMutate) {
     anchor: block.getBoundingClientRect(),
     label: block.textContent,
     color: blockColor(block),
+    saveText: "Save",
+    onSave: ({ label, color }) => {
+      closeEditor();
+      onMutate({ method: "PATCH", path: `/api/blocks/${blockId}`, body: { label, color } });
+    },
+    onDelete: () => {
+      closeEditor();
+      onMutate({ method: "DELETE", path: `/api/blocks/${blockId}` });
+    },
+    onTodo: () => {
+      closeEditor();
+      unscheduleBlock(blockId, onMutate);
+    },
+  });
+}
+
+function handleTodoPointerDown(event, card, calendar, weekStart, onMutate) {
+  const blockId = Number(card.dataset.blockId);
+  card.classList.add("dragging");
+
+  startDrag(event, calendar, () => {});
+  window.addEventListener("pointerup", (upEvent) => {
+    card.classList.remove("dragging");
+    const target = document.elementFromPoint(upEvent.clientX, upEvent.clientY);
+    const dayCol = target?.closest(".day-column");
+    if (dayCol) {
+      scheduleTodo(blockId, dayCol, upEvent, weekStart, onMutate);
+    } else {
+      openTodoEditor(blockId, card, onMutate);
+    }
+  }, { once: true });
+}
+
+function scheduleTodo(blockId, dayCol, upEvent, weekStart, onMutate) {
+  const cell = cellFromPoint(upEvent.clientX, upEvent.clientY, dayCol);
+  if (!cell) return;
+  const startMinutes = slotMinutes(cell.slot);
+  const endMinutes = Math.min(startMinutes + 60, 24 * 60);
+  const dayDate = new Date(weekStart);
+  dayDate.setDate(dayDate.getDate() + cell.day);
+  onMutate({
+    method: "PATCH",
+    path: `/api/blocks/${blockId}`,
+    body: { start: isoAt(dayDate, startMinutes), end: isoAt(dayDate, endMinutes) },
+  });
+}
+
+function openTodoEditor(blockId, card, onMutate) {
+  openEditor({
+    anchor: card.getBoundingClientRect(),
+    label: card.textContent,
+    color: blockColor(card),
     saveText: "Save",
     onSave: ({ label, color }) => {
       closeEditor();
