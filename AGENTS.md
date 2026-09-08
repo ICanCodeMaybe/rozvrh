@@ -110,8 +110,10 @@ All endpoints under `/api`, JSON in/out. Errors: `{"detail": "..."}` with proper
 ```
 GET    /api/weeks/{iso_year}/{iso_week}      -> all blocks overlapping that ISO week
 GET    /api/blocks?from={iso}&to={iso}       -> blocks in a datetime range (for external projects)
+GET    /api/blocks/todo                      -> unscheduled blocks (source="todo", keeps slot + duration)
 POST   /api/blocks                           -> create block, returns it with id
-PATCH  /api/blocks/{id}                      -> partial update (any of start/end/label/color)
+PATCH  /api/blocks/{id}                      -> partial update (any of start/end/label/color/source)
+                                             -> start-only patch = move: end = start + original duration
 DELETE /api/blocks/{id}                      -> 204
 
 GET    /api/templates                        -> list templates (with their blocks)
@@ -122,6 +124,14 @@ POST   /api/templates/{id}/apply/{iso_year}/{iso_week}
        -> copies template blocks into that week; skips slots already occupied
           (overlap = any intersection with an existing block); returns created blocks
 ```
+
+**Block `source` field:** blocks carry `source` (`"ui"` or `"todo"`). `"todo"` means unscheduled
+(parking-lot): the block keeps its slot and duration but is excluded from week/range queries and
+listed by `GET /api/blocks/todo`. Scheduling a to-do (any start/end change) flips it back to
+`"ui"`. `ics:<uid>` is reserved for future calendar import and is rejected by the API so external
+clients cannot forge it. A start-only PATCH means "move, keep duration" — this is what makes
+drag-move and to-do scheduling work; external clients should send both start and end if they want
+an explicit resize.
 
 **Auth (mandatory):** all `/api/*` requests require an `X-API-Key` header matching env var
 `ROZVRH_API_KEY`. Compare with `secrets.compare_digest`. Missing/wrong key -> `401`.

@@ -5,6 +5,7 @@ from pydantic import BaseModel, ValidationInfo, field_validator
 COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 LABEL_MAX_LEN = 200
 ALIGNMENT_MINUTES = {0, 15, 30, 45}
+TODO_SOURCE = "todo"
 
 
 def _validate_hhmm(value: str) -> str:
@@ -36,6 +37,7 @@ class BlockIn(BaseModel):
     end: str
     label: str = ""
     color: str = "#4a90d9"
+    source: str = "ui"
 
     @field_validator("start", "end")
     @classmethod
@@ -64,12 +66,22 @@ class BlockIn(BaseModel):
             raise ValueError("color must match #RRGGBB")
         return value
 
+    @field_validator("source")
+    @classmethod
+    def source_is_todo_or_ui(cls, value: str) -> str:
+        # 'ics:<uid>' is reserved for future calendar import; the API only
+        # accepts ui/todo so external clients cannot forge an ics source.
+        if value not in ("ui", TODO_SOURCE):
+            raise ValueError("source must be 'ui' or 'todo'")
+        return value
+
 
 class BlockPatch(BaseModel):
     start: str | None = None
     end: str | None = None
     label: str | None = None
     color: str | None = None
+    source: str | None = None
 
     @field_validator("start", "end")
     @classmethod
@@ -90,6 +102,13 @@ class BlockPatch(BaseModel):
     def color_is_hex(cls, value: str | None) -> str | None:
         if value is not None and not COLOR_RE.match(value):
             raise ValueError("color must match #RRGGBB")
+        return value
+
+    @field_validator("source")
+    @classmethod
+    def source_is_todo_or_ui(cls, value: str | None) -> str | None:
+        if value is not None and value not in ("ui", TODO_SOURCE):
+            raise ValueError("source must be 'ui' or 'todo'")
         return value
 
 

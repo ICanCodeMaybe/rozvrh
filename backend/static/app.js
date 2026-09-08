@@ -1,7 +1,10 @@
-import { fetchWeek } from "./api.js";
+import { fetchTodo, fetchWeek, mutate } from "./api.js";
 import { render } from "./calendar.js";
+import { wireInteractions } from "./interact.js";
 
-// state = { weekStart: Date (Monday 00:00 local), blocks: [...] } — re-render after every change.
+// state = { weekStart: Date (Monday 00:00 local), blocks: [...], todo: [...] }
+// — re-render after every change. todo blocks are unscheduled (source='todo')
+// but keep a real slot+duration; they are week-independent so fetched once per render.
 
 const DAY_MS = 86_400_000;
 
@@ -39,18 +42,27 @@ function weekTitle(monday) {
   return `${fmt(monday)} – ${fmt(sunday)}`;
 }
 
-const state = { weekStart: mondayOf(new Date()), blocks: [] };
+const state = { weekStart: mondayOf(new Date()), blocks: [], todo: [] };
 
-function mount(calendar) {
+function mount(state) {
+  const calendar = render(state);
   document.getElementById("calendar").replaceWith(calendar);
+  wireInteractions(calendar, { weekStart: state.weekStart, onMutate });
   document.getElementById("week-picker").value = weekPickerValue(state.weekStart);
   document.getElementById("week-title").textContent = weekTitle(state.weekStart);
 }
 
 async function refresh() {
   const { year, week } = isoWeekOf(state.weekStart);
-  state.blocks = await fetchWeek(year, week);
-  mount(render(state));
+  [state.blocks, state.todo] = await Promise.all([fetchWeek(year, week), fetchTodo()]);
+  mount(state);
+}
+
+// Every mutation (create/patch/delete) goes through here so the grid is
+// always rebuilt from server state.
+async function onMutate({ method, path, body }) {
+  await mutate({ method, path, body });
+  await refresh();
 }
 
 function shiftWeek(delta) {

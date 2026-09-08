@@ -54,6 +54,21 @@ week's corresponding day and **skips slots that overlap any existing block** in 
 week; it returns the blocks that were created (re-applying the same template is a no-op).
 Week 53 is only valid for years that actually have one (e.g. 2026 yes, 2025 no).
 
+## API (M4.5) — to-do blocks
+
+| Method | Path                       | Notes                                        |
+|--------|----------------------------|----------------------------------------------|
+| GET    | `/api/blocks/todo`         | unscheduled (parking-lot) blocks, newest first |
+
+A to-do block is a normal block with `source: "todo"`. It keeps a slot and
+duration (start/end) like any block, but is hidden from week and range queries.
+Create one with `POST /api/blocks` and `"source": "todo"`. Scheduling one means
+`PATCH`ing `start` (duration is preserved) or `start` + `end` — the server flips
+`source` back to `ui`. Unscheduling means `PATCH`ing `{"source": "todo"}`; the
+slot and duration survive the round-trip. The `source` field only accepts `ui`
+and `todo` (`ics:<uid>` is reserved for future calendar import and cannot be set
+via the API).
+
 ## Tests
 
 ```bash

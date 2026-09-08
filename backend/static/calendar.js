@@ -4,12 +4,26 @@ const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const SLOT_MINUTES = 15;
 const SLOTS_PER_DAY = 96;
 const SLOT_HEIGHT_PX = 14;
-const DAY_MS = 86_400_000;
 
 function minutesSinceMidnight(isoDatetime) {
   const time = isoDatetime.slice(11);
   const [hh, mm] = time.split(":").map(Number);
   return hh * 60 + mm;
+}
+
+// Cross-midnight durations (23:30 -> 00:15) must count the rolled-over minutes.
+function durationMinutes(block) {
+  const startDate = Date.parse(block.start.slice(0, 10));
+  const dayDelta = Math.round((Date.parse(block.end.slice(0, 10)) - startDate) / 86_400_000);
+  return minutesSinceMidnight(block.end) + dayDelta * 24 * 60 - minutesSinceMidnight(block.start);
+}
+
+function formatDuration(minutes) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
 }
 
 function localDate(date) {
@@ -57,6 +71,35 @@ function dayColumn(dayIndex) {
   return col;
 }
 
+function todoColumn(todoBlocks) {
+  const col = document.createElement("div");
+  col.className = "todo-column";
+  col.id = "todo-column";
+  const header = document.createElement("div");
+  header.className = "day-header";
+  header.textContent = "To-do";
+  col.append(header);
+  for (const block of todoBlocks) {
+    col.append(todoCard(block));
+  }
+  return col;
+}
+
+function todoCard(block) {
+  const card = document.createElement("div");
+  card.className = "todo-card";
+  card.dataset.blockId = String(block.id);
+  card.style.backgroundColor = block.color;
+  const labelSpan = document.createElement("span");
+  labelSpan.className = "todo-label";
+  labelSpan.textContent = block.label;
+  const durationSpan = document.createElement("span");
+  durationSpan.className = "block-duration";
+  durationSpan.textContent = formatDuration(durationMinutes(block));
+  card.append(labelSpan, durationSpan);
+  return card;
+}
+
 // Blocks overlapping the week edge (e.g. Sun 23:00 -> Mon next week) are clamped
 // into the visible week rather than rendered off-grid.
 function blockDiv(block, weekStartIso) {
@@ -64,7 +107,7 @@ function blockDiv(block, weekStartIso) {
   div.className = "block";
   div.dataset.blockId = String(block.id);
   div.style.backgroundColor = block.color;
-  const dayIndex = Math.round((Date.parse(block.start.slice(0, 10)) - Date.parse(weekStartIso)) / DAY_MS);
+  const dayIndex = Math.round((Date.parse(block.start.slice(0, 10)) - Date.parse(weekStartIso)) / 86_400_000);
   const startMinutes = minutesSinceMidnight(block.start);
   const endMinutes = minutesSinceMidnight(block.end);
   const startSlots = Math.max(0, Math.floor(startMinutes / SLOT_MINUTES));
@@ -73,7 +116,13 @@ function blockDiv(block, weekStartIso) {
   const span = Math.max(1, endSlots - startSlots);
   div.style.gridColumn = String(column);
   div.style.gridRow = `${startSlots + 2} / span ${span}`;
-  div.textContent = block.label;
+  const labelSpan = document.createElement("span");
+  labelSpan.className = "block-label";
+  labelSpan.textContent = block.label;
+  const durationSpan = document.createElement("span");
+  durationSpan.className = "block-duration";
+  durationSpan.textContent = formatDuration(durationMinutes(block));
+  div.append(labelSpan, durationSpan);
   return div;
 }
 
@@ -92,5 +141,6 @@ export function render(state) {
   for (const block of state.blocks) {
     calendar.append(blockDiv(block, weekStartIso));
   }
+  calendar.append(todoColumn(state.todo));
   return calendar;
 }

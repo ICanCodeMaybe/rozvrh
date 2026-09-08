@@ -1,7 +1,5 @@
+.playwright-mcp/
 __pycache__/
 *.pyc
-.venv/
-.pytest_cache/
 rozvrh.db
-*.db-wal
-*.db-shm
+*.db
