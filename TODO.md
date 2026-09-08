@@ -40,6 +40,8 @@ skips occupied slots. `pytest` passes.
 - [x] Every mutation re-fetches/re-renders; no `innerHTML` with user data
 
 **Accept:** full CRUD works in the browser against the real API.
+*(Merged to master after review + resize fixes: edge follows pointer, works over child
+spans and on short blocks, click no longer counts as a move.)*
 
 ## M4.5 — To-do column, duration display, mobile
 - [x] `GET /api/blocks/todo`: unscheduled blocks (`source="todo"`, keeps slot + duration)
@@ -52,8 +54,7 @@ skips occupied slots. `pytest` passes.
 
 **Accept:** park a block in To-do, drag it onto a day later with its duration intact;
 all interactions usable on a phone-sized viewport. `pytest` passes.
-**Accept:** park a block in To-do, drag it onto a day later; all interactions usable
-on a phone-sized viewport. `pytest` passes.
+*(Merged to master together with M4 after review; PATCH start-only = move documented in AGENTS.md §4.)*
 
 ## M5 — Templates UI
 - [ ] "Save current week as template" flow (name + blocks)

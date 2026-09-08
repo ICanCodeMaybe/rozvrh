@@ -31,7 +31,7 @@ All `/api` routes require the header `X-API-Key: <key>`.
 |--------|----------------------------|-----------------------------------------|
 | GET    | `/api/blocks?from=&to=`    | blocks overlapping the datetime range   |
 | POST   | `/api/blocks`              | create a block                          |
-| PATCH  | `/api/blocks/{id}`         | partial update                          |
+| PATCH  | `/api/blocks/{id}`         | partial update; start-only = move (end = start + original duration) |
 | DELETE | `/api/blocks/{id}`         | 204                                     |
 
 Times are local naive ISO strings `YYYY-MM-DDTHH:MM`, 15-minute aligned.
@@ -74,3 +74,26 @@ via the API).
 ```bash
 python -m pytest
 ```
+
+## Frontend
+
+Vanilla JS (ES modules), no build step. One page: a 7-day CSS-grid calendar
+(15-min rows), week navigation (prev/next/today/date picker), and a to-do column.
+
+- **Interactions:** click an empty grid slot to create a block (default 1h); drag
+  the block body to move (snaps to 15 min, can cross days, grab point is kept);
+  drag the bottom edge to resize (the edge follows the pointer, minimum 15 min);
+  click a block to edit label/color or delete. Every mutation re-fetches and
+  re-renders from server state; failed saves show an error banner in the toolbar.
+- **To-do column:** create-as-todo from the grid editor, tap a card to edit/delete,
+  drag a card onto the grid to schedule (duration preserved), drag a block onto
+  the column (or use the editor's To-do button) to unschedule.
+- Blocks show their duration (e.g. `2h 30m`, correct across midnight).
+- The API key is kept in `localStorage`; on 401 the page prompts for it and retries.
+- Mobile: the grid scrolls horizontally with a minimum day width, the to-do
+  column keeps a fixed size, the editor is clamped to the viewport.
+
+## Schema note
+
+M4.5 started using the `source` column (`ui`/`todo`) that was reserved in the
+original schema. No migration needed — the column existed from day one.
