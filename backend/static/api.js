@@ -25,7 +25,23 @@ async function request(path, options = {}) {
   return response;
 }
 
+async function json(response) {
+  return response.json();
+}
+
 export async function fetchWeek(isoYear, isoWeek) {
   const response = await request(`/api/weeks/${isoYear}/${isoWeek}`);
   return response.json();
+}
+
+export async function mutate({ method, path, body }) {
+  const response = await request(path, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body ?? {}),
+  });
+  if (response.status !== 204) {
+    return json(response);
+  }
+  return null;
 }
