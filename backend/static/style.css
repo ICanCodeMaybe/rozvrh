@@ -245,3 +245,9 @@ body {
   color: #e74c3c;
   margin-left: auto;
 }
+
+#error-banner {
+  margin-left: auto;
+  color: #e74c3c;
+  font-size: 0.8rem;
+}

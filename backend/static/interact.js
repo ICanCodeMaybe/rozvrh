@@ -119,7 +119,10 @@ function handleEmptyClick(event, calendar, weekStart, onMutate) {
 
 function handleBlockPointerDown(event, block, calendar, weekStart, onMutate) {
   const blockId = Number(block.dataset.blockId);
-  const isResize = event.target === block && event.offsetY > block.offsetHeight - 8;
+  // The bottom 8px of the block or its children is the resize handle; the
+  // spans fill the block, so the check must accept them too.
+  const onBlock = event.target === block || block.contains(event.target);
+  const isResize = onBlock && event.offsetY > block.offsetHeight - 8;
   // The rendered grid styles are the source of truth; deriving slot/day from
   // pixels drifts by a slot when blocks have margins.
   const gcMatch = block.style.gridColumn.match(/\d+/);

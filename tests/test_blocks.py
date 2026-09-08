@@ -181,5 +181,21 @@ def test_422_on_invalid_source(client):
     assert resp.status_code == 422
 
 
+def test_422_on_invalid_source_in_patch(client):
+    block = client.post("/api/blocks", json=VALID, headers=headers()).json()
+    resp = client.patch(f"/api/blocks/{block['id']}", json={"source": "ics:fake"}, headers=headers())
+    assert resp.status_code == 422
+
+
+def test_start_only_patch_on_scheduled_block_keeps_duration(client):
+    block = client.post("/api/blocks", json=VALID, headers=headers()).json()
+    resp = client.patch(f"/api/blocks/{block['id']}", json={"start": "2026-09-08T09:00"}, headers=headers())
+    assert resp.status_code == 200
+    moved = resp.json()
+    assert moved["start"] == "2026-09-08T09:00"
+    assert moved["end"] == "2026-09-08T10:00"
+    assert moved["source"] == "ui"
+
+
 def test_401_on_todo_list_without_key(client):
     assert client.get("/api/blocks/todo").status_code == 401

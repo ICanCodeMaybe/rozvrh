@@ -39,14 +39,32 @@ export async function fetchTodo() {
   return response.json();
 }
 
+// Mutations funnel through app.js's onMutate; a failed one must not leave the
+// user staring at a silent snap-back, so surface it in the toolbar.
+function showError(message) {
+  const el = document.getElementById("error-banner");
+  if (!el) return;
+  el.textContent = message;
+  el.hidden = false;
+  clearTimeout(showError.timer);
+  showError.timer = setTimeout(() => {
+    el.hidden = true;
+  }, 4000);
+}
+
 export async function mutate({ method, path, body }) {
-  const response = await request(path, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body ?? {}),
-  });
-  if (response.status !== 204) {
-    return json(response);
+  try {
+    const response = await request(path, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body ?? {}),
+    });
+    if (response.status !== 204) {
+      return json(response);
+    }
+    return null;
+  } catch (error) {
+    showError(`Save failed: ${error.message}`);
+    return null;
   }
-  return null;
 }
