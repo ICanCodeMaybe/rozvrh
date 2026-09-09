@@ -1,6 +1,7 @@
 import { fetchTodo, fetchWeek, mutate } from "./api.js";
 import { render } from "./calendar.js";
 import { wireInteractions } from "./interact.js";
+import { openTemplatesPanel } from "./templates.js";
 
 // state = { weekStart: Date (Monday 00:00 local), blocks: [...], todo: [...] }
 // — re-render after every change. todo blocks are unscheduled (source='todo')
@@ -59,11 +60,21 @@ async function refresh() {
 }
 
 // Every mutation (create/patch/delete) goes through here so the grid is
-// always rebuilt from server state.
+// always rebuilt from server state. Returns the parsed response so callers
+// (templates) can inspect what the server did.
 async function onMutate({ method, path, body }) {
-  await mutate({ method, path, body });
+  const response = await mutate({ method, path, body });
   await refresh();
+  return response;
 }
+
+function getWeekInfo() {
+  return { weekStart: state.weekStart, blocks: state.blocks };
+}
+
+document.getElementById("templates").addEventListener("click", (event) => {
+  openTemplatesPanel({ anchor: event.target.getBoundingClientRect(), getWeekInfo, onMutate });
+});
 
 function shiftWeek(delta) {
   state.weekStart.setDate(state.weekStart.getDate() + delta * 7);

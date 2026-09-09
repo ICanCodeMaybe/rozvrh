@@ -31,6 +31,134 @@ body {
 
 #week-picker { margin-left: auto; }
 
+#templates {
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #f5f6f8;
+  cursor: pointer;
+}
+
+.templates-panel {
+  position: fixed;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  width: 340px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
+}
+
+.templates-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.templates-header h2 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.templates-header button {
+  border: none;
+  background: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.templates-save {
+  display: flex;
+  gap: 6px;
+}
+
+.templates-save input {
+  flex: 1;
+  font: inherit;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  min-width: 0;
+}
+
+.templates-save button {
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #f5f6f8;
+  cursor: pointer;
+}
+
+.templates-status {
+  font-size: 0.75rem;
+  color: #6b7280;
+  overflow-wrap: anywhere;
+}
+
+.templates-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.templates-empty {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.template-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px;
+}
+
+.template-name {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.template-detail {
+  font-size: 0.72rem;
+  color: #6b7280;
+  overflow-wrap: anywhere;
+}
+
+.template-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.template-actions button {
+  font: inherit;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #f5f6f8;
+  cursor: pointer;
+}
+
+.template-actions button.danger {
+  color: #e74c3c;
+  margin-left: auto;
+}
+
 #calendar {
   display: grid;
   grid-template-columns: var(--time-col-width) repeat(7, minmax(var(--day-min-width), 1fr));

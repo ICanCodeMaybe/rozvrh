@@ -88,6 +88,11 @@ Vanilla JS (ES modules), no build step. One page: a 7-day CSS-grid calendar
 - **To-do column:** create-as-todo from the grid editor, tap a card to edit/delete,
   drag a card onto the grid to schedule (duration preserved), drag a block onto
   the column (or use the editor's To-do button) to unschedule.
+- **Templates:** the toolbar Templates button opens a panel to save the current
+  week's blocks as a named template, list existing ones (with their day/time
+  summary), apply a template to the week being viewed, and delete templates.
+  Applying skips slots occupied by existing blocks and reports what was skipped
+  ("2 added, skipped (occupied): Standup, Gym").
 - Blocks show their duration (e.g. `2h 30m`, correct across midnight).
 - The API key is kept in `localStorage`; on 401 the page prompts for it and retries.
 - Mobile: the grid scrolls horizontally with a minimum day width, the to-do
