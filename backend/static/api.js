@@ -54,10 +54,11 @@ function showError(message) {
 
 export async function mutate({ method, path, body }) {
   try {
+    // GET/HEAD cannot carry a body; only non-GET calls send JSON.
     const response = await request(path, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body ?? {}),
+      ...(method === "GET" ? {} : { body: JSON.stringify(body ?? {}) }),
     });
     if (response.status !== 204) {
       return json(response);
