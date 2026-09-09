@@ -1,3 +1,7 @@
+
+**BEWARE:** This is an AI slop, i did not write a single line of code(But it seems to be somewhat working).
+
+
 # Rozvrh
 
 Single-user weekly calendar, served by FastAPI from a home server.
@@ -192,13 +196,3 @@ Vanilla JS (ES modules), no build step. One page: a 7-day CSS-grid calendar
 - The API key is kept in `localStorage`; on 401 the page prompts for it and retries.
 - Mobile: the grid scrolls horizontally with a minimum day width, the to-do
   column keeps a fixed size, the editor is clamped to the viewport.
-
-## Schema note
-
-M4.5 started using the `source` column (`ui`/`todo`) that was reserved in the
-original schema. No migration needed — the column existed from day one.
-
-M6 added 15-minute alignment validation for template `start_time`/`end_time`
-(already required for blocks). Templates stored earlier with non-aligned times
-remain readable; applying them creates blocks outside the 15-minute grid.
-Re-create such templates if strict alignment matters.
