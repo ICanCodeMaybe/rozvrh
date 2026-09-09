@@ -18,6 +18,9 @@ function weekStartIso(weekStart) {
 
 function dayOfWeek(block, startIso) {
   const day = Math.round((Date.parse(block.start.slice(0, 10)) - Date.parse(startIso)) / 86_400_000);
+  // Clamped: a block spilling past Sunday (Sun 23:00 -> Mon 00:30) is saved on
+  // Sunday, losing the overflow. Templates are weekly, so there is nowhere to
+  // put it; the trade-off is silent truncation of a rare edge case.
   return Math.min(6, Math.max(0, day));
 }
 
@@ -45,8 +48,7 @@ function describeTemplate(template) {
 // Blocks the apply endpoint did not create: their expected start datetime is
 // missing from the response, meaning an existing block occupied the slot.
 function skippedLabels(template, created, weekStart) {
-  const startIso = weekStartIso(weekStart);
-  const createdStarts = new Set((created ?? []).map((b) => b.start));
+  const createdStarts = new Set(created.map((b) => b.start));
   return template.blocks
     .filter((b) => {
       const dayDate = new Date(weekStart);
@@ -56,7 +58,7 @@ function skippedLabels(template, created, weekStart) {
     .map((b) => b.label);
 }
 
-function row(template, { list, weekStart, onMutate, status }) {
+function row(template, { list, getWeekInfo, onMutate, status }) {
   const rowEl = document.createElement("div");
   rowEl.className = "template-row";
   const name = document.createElement("span");
@@ -71,16 +73,22 @@ function row(template, { list, weekStart, onMutate, status }) {
   apply.type = "button";
   apply.textContent = "Apply";
   apply.addEventListener("click", async () => {
-    const { year, week } = currentIsoWeek();
+    // One read of the visible week drives both the URL and the skip report,
+    // so navigating weeks while the panel is open cannot split them apart.
+    const { weekStart } = getWeekInfo();
+    const { year, week } = isoWeekOfDate(weekStart);
     const created = await onMutate({
       method: "POST",
       path: `/api/templates/${template.id}/apply/${year}/${week}`,
     });
+    if (created === null) {
+      status.textContent = `Apply failed for "${template.name}".`;
+      return;
+    }
     const skipped = skippedLabels(template, created, weekStart);
     status.textContent = skipped.length === 0
-      ? `Applied "${template.name}": ${created?.length ?? 0} blocks added.`
-      : `Applied "${template.name}": ${created?.length ?? 0} added, skipped (occupied): ${skipped.join(", ")}`;
-    if (created === null) status.textContent = `Apply failed for "${template.name}".`;
+      ? `Applied "${template.name}": ${created.length} blocks added.`
+      : `Applied "${template.name}": ${created.length} added, skipped (occupied): ${skipped.join(", ")}`;
   });
   const del = document.createElement("button");
   del.type = "button";
@@ -88,16 +96,14 @@ function row(template, { list, weekStart, onMutate, status }) {
   del.className = "danger";
   del.addEventListener("click", async () => {
     await onMutate({ method: "DELETE", path: `/api/templates/${template.id}` });
-    await fill(list, { onMutate, weekStart, status });
+    await fill(list, { getWeekInfo, onMutate, status });
   });
   actions.append(apply, del);
   rowEl.append(name, detail, actions);
   return rowEl;
 }
 
-let currentIsoWeek = () => ({ year: 0, week: 0 });
-
-async function fill(list, { onMutate, weekStart, status }) {
+async function fill(list, { getWeekInfo, onMutate, status }) {
   const templates = await onMutate({ method: "GET", path: "/api/templates" });
   list.replaceChildren();
   if (templates === null) return;
@@ -109,7 +115,7 @@ async function fill(list, { onMutate, weekStart, status }) {
     return;
   }
   for (const template of templates) {
-    list.append(row(template, { list, weekStart, onMutate, status }));
+    list.append(row(template, { list, getWeekInfo, onMutate, status }));
   }
 }
 
@@ -147,13 +153,15 @@ export function openTemplatesPanel({ anchor, getWeekInfo, onMutate }) {
       path: "/api/templates",
       body: { name: nameInput.value, blocks: templateBlocksFromWeek(blocks, weekStartIso(weekStart)) },
     });
-    saveStatus.textContent = saved === null
-      ? "Save failed."
-      : blocks.length === 0
-        ? "Saved an empty template (the week had no blocks)."
-        : `Saved "${saved.name}" with ${saved.blocks.length} blocks.`;
-    if (saved !== null) nameInput.value = "";
-    await fill(list, { onMutate, weekStart, status });
+    if (saved === null) {
+      saveStatus.textContent = "Save failed.";
+      return;
+    }
+    nameInput.value = "";
+    await fill(list, { getWeekInfo, onMutate, status });
+    saveStatus.textContent = blocks.length === 0
+      ? "Saved an empty template (the week had no blocks)."
+      : `Saved "${saved.name}" with ${saved.blocks.length} blocks.`;
   });
 
   const list = document.createElement("div");
@@ -163,22 +171,27 @@ export function openTemplatesPanel({ anchor, getWeekInfo, onMutate }) {
 
   panel.append(header, saveForm, saveStatus, list, status);
   document.body.append(panel);
-  const left = Math.min(Math.max(anchor.left, 8), window.innerWidth - panel.offsetWidth - 8);
-  const top = Math.min(Math.max(anchor.top, 8), window.innerHeight - panel.offsetHeight - 8);
-  panel.style.left = `${left}px`;
-  panel.style.top = `${top}px`;
-  nameInput.focus();
-
-  currentIsoWeek = () => {
-    const { weekStart } = getWeekInfo();
-    return currentIsoWeekFrom(weekStart);
+  // Clamp into the viewport at open and again on resize; a fixed-position
+  // panel opened near the right edge would otherwise end up off-screen when
+  // the window shrinks (or on a phone rotation).
+  const clampIntoViewport = () => {
+    const rect = panel.getBoundingClientRect();
+    panel.style.left = `${Math.min(Math.max(rect.left, 8), Math.max(8, window.innerWidth - rect.width - 8))}px`;
+    panel.style.top = `${Math.min(Math.max(rect.top, 8), Math.max(8, window.innerHeight - rect.height - 8))}px`;
   };
-  const { weekStart } = getWeekInfo();
-  fill(list, { onMutate, weekStart, status });
+  clampIntoViewport();
+  window.addEventListener("resize", clampIntoViewport);
+  close.addEventListener("click", () => window.removeEventListener("resize", clampIntoViewport), { once: true });
+  nameInput.focus();
+  // fill() resolves after the list rows are in the DOM; the panel may have
+  // grown, so clamp again once its final size is known.
+  fill(list, { getWeekInfo, onMutate, status }).then(clampIntoViewport);
 }
 
-function currentIsoWeekFrom(weekStart) {
-  // ISO week number: the Thursday of the week decides year and number.
+// ISO 8601 week number: week 1 of a year is the week containing the first
+// Thursday, equivalently the one containing Jan 4; the Thursday of the visible
+// week decides both year and number.
+function isoWeekOfDate(weekStart) {
   const DAY_MS = 86_400_000;
   const thursday = new Date(weekStart);
   thursday.setDate(thursday.getDate() + 3);
@@ -186,6 +199,6 @@ function currentIsoWeekFrom(weekStart) {
   const jan4Monday = new Date(jan4);
   jan4Monday.setHours(0, 0, 0, 0);
   jan4Monday.setDate(jan4Monday.getDate() - (jan4Monday.getDay() + 6) % 7);
-  const week = Math.max(1, 1 + Math.round((thursday.getTime() - jan4Monday.getTime()) / (7 * DAY_MS)));
+  const week = 1 + Math.round((thursday.getTime() - jan4Monday.getTime()) / (7 * DAY_MS));
   return { year: thursday.getFullYear(), week };
 }
