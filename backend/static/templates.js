@@ -1,8 +1,10 @@
 // Templates panel: save the current week as a template, list templates,
 // apply one to the visible week (reporting skipped occupied slots), delete.
-// All server calls go through the shared mutate(); the grid refresh is owned
-// by app.js's onMutate, which returns the API response so skipped blocks can
-// be computed here.
+// Reads go through fetchTemplates(), mutations through the shared mutate();
+// the grid refresh is owned by app.js's onMutate, which returns the API
+// response so skipped blocks can be computed here.
+
+import { fetchTemplates, mutate } from "./api.js";
 
 function hhmm(isoDatetime) {
   return isoDatetime.slice(11, 16);
@@ -104,7 +106,7 @@ function row(template, { list, getWeekInfo, onMutate, status }) {
 }
 
 async function fill(list, { getWeekInfo, onMutate, status }) {
-  const templates = await onMutate({ method: "GET", path: "/api/templates" });
+  const templates = await fetchTemplates();
   list.replaceChildren();
   if (templates === null) return;
   if (templates.length === 0) {

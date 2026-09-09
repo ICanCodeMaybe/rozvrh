@@ -57,16 +57,21 @@ all interactions usable on a phone-sized viewport. `pytest` passes.
 *(Merged to master together with M4 after review; PATCH start-only = move documented in AGENTS.md §4.)*
 
 ## M5 — Templates UI
-- [ ] "Save current week as template" flow (name + blocks)
-- [ ] Template list, apply-to-current-week button (shows what was skipped)
-- [ ] Template delete
+- [x] "Save current week as template" flow (name + blocks)
+- [x] Template list, apply-to-current-week button (shows what was skipped)
+- [x] Template delete
 
 **Accept:** save a week as template, apply it to a future week via UI.
+*(Merged to master: 650cb99.)*
 
 ## M6 — Polish + ops
-- [ ] Security pass: auth on every `/api` route, input validation audit (label length, color hex, time alignment), no secrets in repo, key never logged
-- [ ] README: full API reference, env vars, systemd unit + cloudflared tunnel setup
-- [ ] Manual pass: all interactions, week nav, templates, API from curl
-- [ ] Final full `pytest` run + code review
+- [x] Security pass: auth on every `/api` route, input validation audit (label length, color hex, time alignment), no secrets in repo, key never logged
+      *(fixed: template times now 15-min aligned; `/api/weeks/{year}` out-of-range returns 422 instead of 500)*
+- [x] README: full API reference, env vars, systemd unit + cloudflared tunnel setup
+- [x] Manual pass: all interactions, week nav, templates, API from curl
+- [x] Final full `pytest` run + code review
+      *(M6 review passed: pytest 46 green, mypy clean, pylint 10.00/10, live curl checks OK;
+      review fixes applied — shared validators, update_block column guard, logging instead of
+      print, dead check removed, template list via fetchTemplates.)*
 
 **Accept:** one command starts the app; README is enough for a stranger to run it.

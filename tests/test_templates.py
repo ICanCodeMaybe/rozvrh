@@ -72,7 +72,9 @@ def test_template_422_on_bad_block(client):
     bad = {"name": "X", "blocks": [{"day_of_week": 0, "start_time": "10:00", "end_time": "09:00"}]}
     assert client.post("/api/templates", json=bad, headers=headers()).status_code == 422
     bad = {"name": "X", "blocks": [{"day_of_week": 0, "start_time": "09:1", "end_time": "10:00"}]}
+    bad_align = {"name": "X", "blocks": [{"day_of_week": 0, "start_time": "09:07", "end_time": "10:00"}]}
     assert client.post("/api/templates", json=bad, headers=headers()).status_code == 422
+    assert client.post("/api/templates", json=bad_align, headers=headers()).status_code == 422
 
 
 def test_apply_to_empty_week_creates_blocks(client):

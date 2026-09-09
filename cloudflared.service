@@ -1,0 +1,13 @@
+[Unit]
+Description=Cloudflare tunnel for rozvrh
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=USER
+ExecStart=/usr/bin/cloudflared tunnel --no-autoupdate run
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,16 @@
+[Unit]
+Description=Rozvrh weekly calendar
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=USER
+Environment=ROZVRH_DB=/home/USER/.local/share/rozvrh/rozvrh.db
+Environment=ROZVRH_API_KEY=CHANGE_ME
+ExecStart=/home/USER/rozvrh/.venv/bin/uvicorn backend.main:app --port 8000
+WorkingDirectory=/home/USER/rozvrh
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

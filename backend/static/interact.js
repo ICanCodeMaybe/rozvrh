@@ -87,7 +87,6 @@ export function wireInteractions(calendar, { weekStart, onMutate }) {
     } else if (todoCard) {
       handleTodoPointerDown(event, todoCard, calendar, weekStart, onMutate);
     } else if (event.target.closest(".day-column")) {
-      if (event.target.classList.contains("block")) return;
       handleEmptyClick(event, calendar, weekStart, onMutate);
     }
   });

@@ -39,6 +39,11 @@ export async function fetchTodo() {
   return response.json();
 }
 
+export async function fetchTemplates() {
+  const response = await request("/api/templates");
+  return response.json();
+}
+
 // Mutations funnel through app.js's onMutate; a failed one must not leave the
 // user staring at a silent snap-back, so surface it in the toolbar.
 function showError(message) {

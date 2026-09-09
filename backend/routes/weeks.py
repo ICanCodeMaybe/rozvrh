@@ -31,6 +31,8 @@ def week_bounds_iso(year: int, week: int) -> tuple[str, str]:
 
 def resolve_week_or_422(iso_year: int, iso_week: int) -> tuple[date, date]:
     """Validated week bounds; raises the shared 422s for bad week numbers."""
+    if not 1 <= iso_year <= 9999:
+        raise HTTPException(status_code=422, detail="iso_year must be 1..9999")
     if not 1 <= iso_week <= 53:
         raise HTTPException(status_code=422, detail="iso_week must be 1..53")
     week_start, week_end = week_bounds(iso_year, iso_week)

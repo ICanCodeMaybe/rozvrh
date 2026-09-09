@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from backend import db
 from backend.auth import require_api_key
-from backend.models import BlockOut, validate_color, validate_label
+from backend.models import ALIGNMENT_MINUTES, BlockOut, validate_color, validate_label
 from backend.routes.blocks import row_to_out
 from backend.routes.weeks import resolve_week_or_422, week_bounds, week_bounds_iso
 
@@ -35,6 +35,8 @@ class TemplateBlockIn(BaseModel):
         hh, mm = value.split(":")
         if not (hh.isdigit() and mm.isdigit() and 0 <= int(hh) <= 23 and int(mm) <= 59):
             raise ValueError(f"invalid time: {value}")
+        if int(mm) not in ALIGNMENT_MINUTES:
+            raise ValueError(f"minutes must be one of 00/15/30/45, got :{mm}")
         return value
 
     @field_validator("end_time")

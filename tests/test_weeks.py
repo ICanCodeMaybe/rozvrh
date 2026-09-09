@@ -67,6 +67,11 @@ def test_week_invalid_week_number(client):
     assert client.get("/api/weeks/2026/54", headers=headers()).status_code == 422
 
 
+def test_week_invalid_year(client):
+    assert client.get("/api/weeks/0/1", headers=headers()).status_code == 422
+    assert client.get("/api/weeks/10000/1", headers=headers()).status_code == 422
+
+
 def test_week_nonexistent_week_53(client):
     # 2026 has 53 ISO weeks, 2025 has 52
     assert client.get("/api/weeks/2026/53", headers=headers()).status_code == 200

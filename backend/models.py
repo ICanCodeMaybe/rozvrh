@@ -55,16 +55,12 @@ class BlockIn(BaseModel):
     @field_validator("label")
     @classmethod
     def label_not_too_long(cls, value: str) -> str:
-        if len(value) > LABEL_MAX_LEN:
-            raise ValueError(f"label must be at most {LABEL_MAX_LEN} characters")
-        return value
+        return validate_label(value)
 
     @field_validator("color")
     @classmethod
     def color_is_hex(cls, value: str) -> str:
-        if not COLOR_RE.match(value):
-            raise ValueError("color must match #RRGGBB")
-        return value
+        return validate_color(value)
 
     @field_validator("source")
     @classmethod

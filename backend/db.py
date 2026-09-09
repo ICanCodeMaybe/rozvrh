@@ -96,13 +96,18 @@ def insert_block(
     return row
 
 
+ALLOWED_BLOCK_COLUMNS = {"start", "end", "label", "color", "source"}
+
+
 def update_block(
     conn: sqlite3.Connection,
     block_id: int,
     fields: dict[str, str],
 ) -> sqlite3.Row | None:
-    # keys become SQL column names; callers must pass only model_dump() keys,
-    # never user-controlled strings
+    # keys become SQL column names, so they are checked against the schema;
+    # callers pass model_dump() keys, never user-controlled strings
+    if not set(fields) <= ALLOWED_BLOCK_COLUMNS:
+        raise ValueError(f"unexpected columns: {sorted(set(fields) - ALLOWED_BLOCK_COLUMNS)}")
     sets = ", ".join(f"{name} = ?" for name in fields)
     params = list(fields.values()) + [block_id]
     conn.execute(f"UPDATE blocks SET {sets} WHERE id = ?", params)
