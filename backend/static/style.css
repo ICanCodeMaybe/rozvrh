@@ -9,6 +9,9 @@
 
 * { box-sizing: border-box; }
 
+/* quick double taps on buttons must not zoom the page */
+button { touch-action: manipulation; }
+
 body {
   margin: 0;
   font-family: system-ui, sans-serif;
@@ -250,6 +253,7 @@ body {
   cursor: grab;
   touch-action: none;
   user-select: none;
+  -webkit-touch-callout: none;
   overflow-wrap: anywhere;
 }
 
@@ -281,6 +285,22 @@ body {
 
   /* fixed-size editor needs the whole screen on phones */
   .editor { width: min(220px, calc(100vw - 16px)); }
+
+  /* iOS Safari zooms the viewport when an input under 16px gets focus */
+  .editor-label,
+  .templates-save input { font-size: 16px; }
+
+  /* <input type="week"> renders as plain text on iOS; prev/next/today suffice */
+  #week-picker { display: none; }
+
+  /* WCAG tap-target minimum */
+  #toolbar button,
+  .editor-actions button,
+  .swatch,
+  .templates-save button,
+  .template-actions button {
+    padding: 10px 12px;
+  }
 }
 
 .block {
@@ -297,6 +317,7 @@ body {
   cursor: pointer;
   touch-action: none;
   user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .block.dragging {

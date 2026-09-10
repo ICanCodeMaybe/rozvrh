@@ -184,7 +184,8 @@ export function openTemplatesPanel({ anchor, getWeekInfo, onMutate }) {
   clampIntoViewport();
   window.addEventListener("resize", clampIntoViewport);
   close.addEventListener("click", () => window.removeEventListener("resize", clampIntoViewport), { once: true });
-  nameInput.focus();
+  // Same keyboard rule as the editor: no autofocus on touch devices.
+  if (window.matchMedia("(pointer: fine)").matches) nameInput.focus();
   // fill() resolves after the list rows are in the DOM; the panel may have
   // grown, so clamp again once its final size is known.
   fill(list, { getWeekInfo, onMutate, status }).then(clampIntoViewport);

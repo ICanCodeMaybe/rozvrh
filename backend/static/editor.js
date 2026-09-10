@@ -34,12 +34,14 @@ function swatchRow(selected, onPick) {
 
 let openForm = null;
 let onOutside = null;
+let onVvResize = null;
 
 export function closeEditor() {
   if (onOutside) document.removeEventListener("pointerdown", onOutside);
   onOutside = null;
   openForm?.remove();
   openForm = null;
+  window.visualViewport?.removeEventListener("resize", onVvResize);
 }
 
 // anchor: DOMRect or {left, top} to place the editor next to.
@@ -91,7 +93,18 @@ export function openEditor({ anchor, label = "", color = PALETTE[0], saveText, o
   const top = Math.min(Math.max(anchor.top, 8), window.innerHeight - form.offsetHeight - 8);
   form.style.left = `${left}px`;
   form.style.top = `${top}px`;
-  input.focus();
+  // Focusing a text input forces the virtual keyboard open on touch devices;
+  // the editor opens on nearly every tap, so only autofocus with a fine pointer.
+  if (window.matchMedia("(pointer: fine)").matches) input.focus();
+  // The keyboard shrinks the visual viewport, not the layout viewport; re-clamp
+  // so the editor stays visible above it when the user taps the label field.
+  const vv = window.visualViewport;
+  const reclamp = () => {
+    const rect = form.getBoundingClientRect();
+    const limit = (vv ? vv.height : window.innerHeight) - rect.height - 8;
+    form.style.top = `${Math.min(Math.max(rect.top, 8), Math.max(8, limit))}px`;
+  };
+  vv?.addEventListener("resize", reclamp);
   form.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeEditor();
   });
@@ -102,6 +115,7 @@ export function openEditor({ anchor, label = "", color = PALETTE[0], saveText, o
   onOutside = (event) => {
     if (event.target instanceof Node && !form.contains(event.target)) closeEditor();
   };
+  onVvResize = reclamp;
   // next tick: skip the pointerdown that opened the editor
   setTimeout(() => document.addEventListener("pointerdown", onOutside));
 }
